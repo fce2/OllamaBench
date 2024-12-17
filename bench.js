@@ -1,6 +1,8 @@
 /*
   why:
     runs a sky-blue benchmark on *all* installed models in *all* (kind of) possible context sizes to find bottlenecks/sweetspots.
+  start:
+    just run "node bench.js"
   needed:
     npm i request
     npm i async
