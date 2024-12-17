@@ -34,16 +34,16 @@
     http://<host>:3001/get_bench_results
 */
 
-var ollamaHost = "192.168.2.109:11434";
-var runBench = true;
-var runServer = true;
-var upload = "http://127.0.0.1:3001/report_bench_result";
-var query = "why is the sky blue ? a short but complete answer.";
+const ollamaHost = "192.168.2.109:11434";
+const runBench = true;
+const runServer = true;
+const upload = "http://127.0.0.1:3001/report_bench_result";
+const query = "why is the sky blue ? a short but complete answer.";
 
 require('process').removeAllListeners('warning'); // [DEP0040] DeprecationWarning: The `punycode` module is deprecated.
 
 const fs = require('fs');
-var http = require("request");
+const http = require("request");
 
 var results = []
 try { results = JSON.parse(fs.readFileSync("results.json", "utf8")); } catch (e) { results=[]; }
@@ -60,16 +60,12 @@ if (runBench) {
     ps(host, (x)=>{ for (let s in x.models) unload(host, x.models[s].model); });
     const queue = require('async').queue((task, completed) => {
       show(host, task.model, (m, d)=>{
-        var max_ctx = d.model_info[d.details.family+'.context_length'];
-        var options = { seed:0, top_k:10, top_p:0.5, num_ctx:task.num_ctx, repeat_penalty:1.7, repeat_last_n:-1 };
-        var p = { model: task.model, messages: [{role:"user","content":query}], options: options, stream: false };
-        process.stdout.write((task.model+",").padEnd(43)+max_ctx+",\t"+task.num_ctx+",\t");
-        var t = Date.now();
-        var next = (error, response, body) => {
+        let t = Date.now();
+        let next = (error, response, body) => {
           t = parseInt(10*(Date.now()-t)/1000)/10;
           if (error) console.log(error);
           ps(host, (x)=>{
-            var pm, gb, p;
+            let pm, gb, p;
             for (let m in x.models) {
               if (task.model == x.models[m].model) {
                 pm = x.models[m].model;
@@ -78,30 +74,34 @@ if (runBench) {
                 break;
               }
             }
-            var pe = parseInt(10*body.prompt_eval_count/(body.prompt_eval_duration/1000000000))/10;
-            var e = parseInt(10*body.eval_count/(body.eval_duration/1000000000))/10;
-            var tps = parseInt(100*(body.prompt_eval_count+body.eval_count)/((body.prompt_eval_duration+body.eval_duration)/1000000000))/100;
-            var result = {model:pm, num_ctx:task.num_ctx, max_ctx:max_ctx, peval:pe, eval:e, tps:tps, used_vram:parseFloat(gb), pgpu:parseFloat(p), time:t, total_vram:parseInt(10*vram/1024)/10, gpus:gpus.join(",")};
-            var url = upload+"?"+encodeURIComponent(JSON.stringify(result));
+            let pe = parseInt(10*body.prompt_eval_count/(body.prompt_eval_duration/1000000000))/10;
+            let e = parseInt(10*body.eval_count/(body.eval_duration/1000000000))/10;
+            let tps = parseInt(100*(body.prompt_eval_count+body.eval_count)/((body.prompt_eval_duration+body.eval_duration)/1000000000))/100;
+            let result = {model:pm, num_ctx:task.num_ctx, max_ctx:max_ctx, peval:pe, eval:e, tps:tps, used_vram:parseFloat(gb), pgpu:parseFloat(p), time:t, total_vram:parseInt(10*vram/1024)/10, gpus:gpus.join(",")};
+            let url = upload+"?"+encodeURIComponent(JSON.stringify(result));
             http.get(url, (x,y)=>{if(x)console.log(x);});
             p = p==100?p+"%":"\x1b[31m"+p+"\x1b[0m";
             console.log(pe+",\t"+e+",\t"+gb+",\t"+p+",\t"+t+",\t"+tps);
             completed(null, task);
           });
         };
+        let max_ctx = d.model_info[d.details.family+'.context_length'];
+        let options = { seed:0, top_k:10, top_p:0.5, num_ctx:task.num_ctx, repeat_penalty:1.7, repeat_last_n:-1 };
+        let p = { model: task.model, messages: [{role:"user","content":query}], options: options, stream: false };
+        process.stdout.write((task.model+",").padEnd(43)+max_ctx+",\t"+task.num_ctx+",\t");
         http.post('http://' + host + '/api/chat', { json: p }, next);
       });
     }, 1);
     console.log("model                                     max_ctx\tnum_ctx\tpe/tps\te/tps\tvram\t% GPU\tsecs\ttps");
     list(host, (m)=>{
-      var models = [];
+      let models = [];
       for (let n in m.models) models.push(m.models[n].model);
       models.sort();
       for (let n in models) {
         show(host, models[n], (m, d)=>{
-          var max_ctx = d.model_info[d.details.family+'.context_length'];
+          let max_ctx = d.model_info[d.details.family+'.context_length'];
           for (let a=max_ctx; a>=2048; a/=2) {
-            var result=null;
+            let result=null;
             for (let r in results) {
               if (results[r].model===m && results[r].num_ctx===a) {
                 result = results[r];
@@ -110,7 +110,7 @@ if (runBench) {
             }
             if (!result) queue.push({model:m,num_ctx:a});
             else {
-              var pgpu = result.pgpu==100?result.pgpu+"%":"\x1b[31m"+result.pgpu+"%\x1b[0m";
+              let pgpu = result.pgpu==100?result.pgpu+"%":"\x1b[31m"+result.pgpu+"%\x1b[0m";
               process.stdout.write((result.model+",").padEnd(43)+result.max_ctx+",\t"+result.num_ctx+",\t");
               console.log(result.peval+",\t"+result.eval+",\t"+result.used_vram+",\t"+pgpu+",\t"+result.time+",\t"+result.tps);
             }
@@ -118,7 +118,7 @@ if (runBench) {
         });
       }
     });
-    queue.process();
+    setTimeout(()=>{queue.process();}, 3000);
   }
   const si = require('systeminformation');
   si.cpu().then(cpu => {
