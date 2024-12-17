@@ -1,11 +1,4 @@
 /*
-i currently own a single 4090 and want to know how six 4060 would perform.
-yes, i'm currently planning 96gb vram since i understood the impact of context size.
-maybe someone here has this setup, so it would be nice to share some performance values.
-for easier sharing i attach here a little benchmark in nodejs...
-if someone wants to host this, sharing would be even easier ;-)
-*/
-/*
   why:
     runs a sky-blue benchmark on *all* installed models in *all* (kind of) possible context sizes to find bottlenecks/sweetspots.
   needed:
